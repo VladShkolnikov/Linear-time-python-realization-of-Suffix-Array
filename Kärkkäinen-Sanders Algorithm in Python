@@ -1,0 +1,208 @@
+class SufAr_Kärkkäinen_Sanders:
+    def __init__(self,s):
+        self.s=s
+        self.length=len(self.s)
+        #an alphabet of 95 letters (from ASCII 32 to 126)
+        c=[[] for i in range(96)]
+        for i in range(self.length):
+            c[ord(self.s[i])-31].append(i)
+        self.AlphabetStr=[0]*(self.length)
+
+        letter=1
+        for alist in c:
+            if alist:
+                for i in alist:
+                    self.AlphabetStr[i]=letter
+                letter+=1
+        self.Alphabet=letter
+
+        # rank is an inverse of SuffixArray (rank[SuffixArray[i]]=i)
+        self.SuffixArray, self.rank=self.SortSufAr()
+        
+        #Least Common Prefix array 
+        self.LCP=self.Kasai()
+
+        
+    def RadixSortTriple(self,AlphabetStr,Alphabet):
+
+        #Increase the length of the string to be a multiple of 3 by adding 0. 
+        #After that two more 0 values are added to avoid overflow, but they are not affecting the length.
+        length=len(AlphabetStr)
+        if length%3==1:
+            AlphabetStr+=[0,0,0,0]
+            length+=2
+            k=2
+        elif length%3==2:
+            AlphabetStr+=[0,0,0]
+            length+=1
+            k=1
+        else:
+            AlphabetStr+=[0,0]
+            k=0
+            
+            
+        
+        
+        c=[[] for x in range(Alphabet)]
+        for index in range(1,length,3):
+            c[AlphabetStr[index+2]].append(index)
+        for index in range(2,length,3):
+            c[AlphabetStr[index+2]].append(index)
+        Third=[]
+        for alist in c:
+            Third+=alist
+        
+            
+        c=[[] for x in range(Alphabet)]
+        for index in Third:
+            c[AlphabetStr[index+1]].append(index)
+        Second=[]
+        for alist in c:
+            Second+=alist
+        
+            
+        c=[[] for x in range(Alphabet)]
+        for index in Second:
+            c[AlphabetStr[index]].append(index)
+
+           
+        shift=length//3
+        NewAlphabetString=[0]*(2*shift)
+        if c[0]:
+            letter=0
+        else:
+            letter=1
+        for alist in c:
+            if alist:
+                tmp1=AlphabetStr[alist[0]+1]
+                tmp2=AlphabetStr[alist[0]+2]
+                for index in alist:
+                    if AlphabetStr[index+1]!=tmp1 or AlphabetStr[index+2]!=tmp2:
+                        letter+=1
+                        tmp1=AlphabetStr[index+1]
+                        tmp2=AlphabetStr[index+2]
+                    if index%3==2:
+                        NewAlphabetString[shift+index//3]=letter
+                    else:
+                        NewAlphabetString[index//3]=letter     
+                letter+=1
+                
+        del AlphabetStr[-1]
+        del AlphabetStr[-1]
+        return NewAlphabetString, letter,k
+            
+            
+                    
+               
+            
+            
+    def SortSufAr(self,AlphabetStr=None,Alphabet=None):
+        if AlphabetStr==None: 
+            AlphabetStr=self.AlphabetStr
+        if Alphabet==None:
+            Alphabet=self.Alphabet
+            
+        
+        
+        if len(AlphabetStr)<=4:
+            mytuple=tuple(AlphabetStr+[-1,-1,-1])
+            mydict={}
+            for i in range(len(AlphabetStr)):
+                mydict[mytuple[i:i+len(AlphabetStr)]]=i
+            
+            SufAr=[]
+            InvSufAr=[0]*len(AlphabetStr)
+            for key in sorted(mydict.keys(),reverse=False):
+                SufAr.append(mydict[key])
+            for i in range(len(AlphabetStr)):
+                InvSufAr[SufAr[i]]=i
+            
+            return SufAr, InvSufAr
+                
+                
+                
+            
+        NewAlphabetStr, NewAlphabet, k=self.RadixSortTriple(AlphabetStr,Alphabet)
+        NonMultSufAr,InvNonMultSufAr=self.SortSufAr(NewAlphabetStr,NewAlphabet)
+        c=[[] for i in  range(Alphabet)]
+        
+        OneThird=len(AlphabetStr)//3
+        for index in range(len(NonMultSufAr)):
+            tmp=NonMultSufAr[index]
+            if tmp<OneThird:
+                c[AlphabetStr[tmp*3]].append(tmp*3)
+                NonMultSufAr[index]=tmp*3+1
+            else:
+                NonMultSufAr[index]=(tmp-OneThird)*3+2
+            
+                
+        MultSufAr=[]
+        for alist in c:
+            MultSufAr+=alist
+        
+        #Merging
+        SufAr=[]
+        AlphabetStr+=[0,0]
+        MultInd, NonMultInd= 0, 0
+        while MultInd<OneThird and NonMultInd<2*OneThird:
+            MultPos, NonMultPos=MultSufAr[MultInd], NonMultSufAr[NonMultInd]
+            if AlphabetStr[MultPos]<AlphabetStr[NonMultPos]:
+                MultInd+=1
+                SufAr.append(MultPos)
+            elif AlphabetStr[MultPos]>AlphabetStr[NonMultPos]:
+                NonMultInd+=1
+                SufAr.append(NonMultPos)
+            elif NonMultPos%3==1:
+                if InvNonMultSufAr[MultPos//3]<InvNonMultSufAr[NonMultPos//3+OneThird]:
+                    MultInd+=1
+                    SufAr.append(MultPos)
+                else:
+                    NonMultInd+=1
+                    SufAr.append(NonMultPos)
+            else:
+                if (AlphabetStr[MultPos+1],InvNonMultSufAr[MultPos//3+OneThird])<=\
+                (AlphabetStr[NonMultPos+1],InvNonMultSufAr[(NonMultPos+1)//3]):
+                    MultInd+=1
+                    SufAr.append(MultPos)
+                else:
+                    NonMultInd+=1
+                    SufAr.append(NonMultPos)
+        if MultInd==OneThird:
+            SufAr+=NonMultSufAr[NonMultInd:]
+        if NonMultInd==2*OneThird:
+            SufAr+=MultSufAr[MultInd:]
+
+        del AlphabetStr[-1]
+        del AlphabetStr[-1]
+        i=0
+        c=0
+        while True:
+            if c==k:
+                break
+            if SufAr[i]>=len(AlphabetStr)-k:
+                del SufAr[i]
+                c+=1
+                continue
+            else:
+                i+=1
+            
+        InvSufAr=[0]*len(SufAr)
+        for i in range(len(SufAr)):
+            InvSufAr[SufAr[i]]=i
+        
+        return SufAr,InvSufAr
+
+    def Kasai(self):
+        LCP=[0]*self.length
+        k=0
+        for i in range(self.length):
+            if self.rank[i]==self.length-1:
+                k=0
+                continue
+            j=self.SuffixArray[self.rank[i]+1]
+            while j+k<self.length and i+k<self.length and self.s[j+k]==self.s[i+k]:
+                k+=1
+            LCP[self.rank[i]+1]=k
+            if k:
+                k-=1
+        return LCP
