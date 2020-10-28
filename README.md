@@ -9,4 +9,4 @@ attributes SuffixArray and LCP (longest common prefix).
 
 SuffixArray is a python list, containing the 0-based indexes of the suffixes, ordered lexicographically.
 
-LCP is a python list, containing the longest common prefix of suffixes i and i-1 from SuffixArray. By definition LCP[0]=0
+LCP is a python list, containing the length of the longest common prefix of suffixes i and i-1 from SuffixArray. By definition LCP[0]=0
