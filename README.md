@@ -7,6 +7,6 @@ that scales linearly with the size of the input string.
 An instance of the class SufAr_Kärkkäinen_Sanders, created with a string as an input argument, contains the
 attributes SuffixArray and LCP (longest common prefix).
 
-SuffixArray is a python list, containing the 0-based indeces of the suffixes, ordered lexicographically.
+SuffixArray is a python list, containing the 0-based indexes of the suffixes, ordered lexicographically.
 
 LCP is a python list, containing the longest common prefix of suffixes i and i-1 from SuffixArray. By definition LCP[0]=0
